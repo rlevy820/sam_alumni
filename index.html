@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Connect</title>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-hover: #1557b0;
+            --success-color: #34a853;
+            --background-color: #f8f9fa;
+            --border-color: #e1e4e8;
+            --text-primary: #24292e;
+            --text-secondary: #586069;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: var(--background-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-primary);
+        }
+
+        h1 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            font-weight: 600;
+        }
+
+        .filters {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .filter-group {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s ease;
+        }
+
+        .filter-group:hover {
+            transform: translateY(-2px);
+        }
+
+        .filter-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--background-color);
+        }
+
+        .checkbox-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .checkbox-list::-webkit-scrollbar-track {
+            background: var(--background-color);
+            border-radius: 4px;
+        }
+
+        .checkbox-list::-webkit-scrollbar-thumb {
+            background: #bbb;
+            border-radius: 4px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 4px;
+            transition: background-color 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .checkbox-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            flex: 1;
+            background-color: white;
+            margin-top: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            position: relative;
+        }
+
+        th {
+            background-color: white;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background-color: white;
+        }
+
+        /* Add a pseudo-element to maintain the sticky header's border */
+        th::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td:has(.person) {
+            background-color: #e8f5e9;
+        }
+
+        .person {
+            font-size: 0.95em;
+            margin: 8px 0;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .person:hover {
+            background-color: rgba(26,115,232,0.1);
+            color: var(--primary-hover);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+        }
+
+        /* Remove sticky positioning when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+        
+        body.modal-open th {
+            position: static;
+        }
+        
+        body.modal-open tr th:first-child {
+            position: static;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .close {
+            position: absolute;
+            right: 25px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .close:hover {
+            color: var(--text-primary);
+        }
+
+        .request-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .request-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .availability {
+            color: var(--success-color);
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .availability::before {
+            content: "✓";
+            margin-right: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find SAM Alumni Who Are Willing to Network</h1>
+    <ol>
+        <li>Find a name</li>
+        <li>Click connect</li>
+        <li>Send the email that pops up and I'll connect you with them</li>
+    </ol>
+
+    <div class="filters">
+        <div class="filter-group">
+            <h3>Industries</h3>
+            <div class="checkbox-list" id="industryFilters"></div>
+        </div>
+        <div class="filter-group">
+            <h3>Locations</h3>
+            <div class="checkbox-list" id="locationFilters"></div>
+        </div>
+    </div>
+    
+    <table id="alumniTable"></table>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load and parse CSV data
+        const alumniData = [
+            {
+                "Names": "Julian El-Abidin",
+                "Industry": "Finance",
+                "Current Company": "Hudson Pacific Properties (4 y)",
+                "Title": "Vice President, Investments",
+                "Location": "Los Angeles"
+            },
+            {
+                "Names": "Ben Crozier",
+                "Industry": "E-Commerce, Finance",
+                "Current Company": "McMaster-Carr (7 m)",
+                "Title": "Project Manager",
+                "Location": "Chicago"
+            },
+            {
+                "Names": "Jared Fogel",
+                "Industry": "Finance, Private Equity",
+                "Current Company": "Metalmark Capital (4 y)",
+                "Title": "Private Equity Vice President",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Ross Oshinsky",
+                "Industry": "Finance",
+                "Current Company": "Point72 (1 y)",
+                "Title": "Analyst",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Spencer Stieff",
+                "Industry": "Real Estate",
+                "Current Company": "Epum (4 y)",
+                "Title": "Co-Founder",
+                "Location": "Seattle"
+            },
+            {
+                "Names": "Christian Pinto",
+                "Industry": "Finance, Private Equity",
+                "Current Company": "Odyssey Investment Partners (4 y)",
+                "Title": "Senior Associate",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Jared Vishno",
+                "Industry": "Business, Technology",
+                "Current Company": "Tavus (1 y)",
+                "Title": "Founding Account Executive",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Grant Sirlin",
+                "Industry": "Business",
+                "Current Company": "LeagueApps (2 y)",
+                "Title": "Senior Business Development Manager",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Jamel Charouel",
+                "Industry": "Software Engineering",
+                "Current Company": "New York Times (5 y)",
+                "Title": "Software Engineering Manager",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Mick O'Hanlon II",
+                "Industry": "Technology, Health, Software Engineering",
+                "Current Company": "MITRE (4 y)",
+                "Title": "Senior Health IT Software Engineer",
+                "Location": "Bedford, MA"
+            },
+            {
+                "Names": "Ben Feldman",
+                "Industry": "Engineering, Aerospace",
+                "Current Company": "The Aerospace Corporation (6 y)",
+                "Title": "Engineering Specialist",
+                "Location": "LA"
+            },
+            {
+                "Names": "Ted Obi, MD",
+                "Industry": "Health, Medicine",
+                "Current Company": "Massachusetts General Hospital (7 m)",
+                "Title": "Psychiatry Resident Physician",
+                "Location": "Boston"
+            },
+            {
+                "Names": "Doug Etts",
+                "Industry": "Law",
+                "Current Company": "Fenwick & West (9 m)",
+                "Title": "Associate",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Ross Glasser",
+                "Industry": "Data Science, Health, Consulting",
+                "Current Company": "Centers for Medicare & Medicaid Services (1y)",
+                "Title": "Social Science Research Analyst, Data Analytics & Assessment, Medicare Drug Rebate and Negotiations",
+                "Location": "Denver"
+            },
+            {
+                "Names": "Michael Dunn",
+                "Industry": "Engineering, Consulting",
+                "Current Company": "Confluent (4y)",
+                "Title": "Staff Solutions Engineer",
+                "Location": "Santa Monica"
+            },
+            {
+                "Names": "Alex Cohen",
+                "Industry": "Data Science, Technology",
+                "Current Company": "Google (3y)",
+                "Title": "Analyst - Data Analytics, Global Performance",
+                "Location": "San Fran"
+            },
+            {
+                "Names": "Bear Carlson",
+                "Industry": "Consulting, Technology",
+                "Current Company": "EY (5y)",
+                "Title": "Manager",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Jack Cranwell",
+                "Industry": "Business, Cosmetics",
+                "Current Company": "Estée Lauder Companies Inc. (4y)",
+                "Title": "Assistant Manager, La Mer Global Go-to-Market Strategy",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Jarrett Littles",
+                "Industry": "Business, Finance",
+                "Current Company": "Salesforce (8m)",
+                "Title": "Senior Analyst - Partner Strategy & Investments",
+                "Location": "San Fran"
+            },
+            {
+                "Names": "Nick Martindale",
+                "Industry": "Consulting",
+                "Current Company": "Deloitte (2y)",
+                "Title": "Strategy Consultant",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Luis Jerez",
+                "Industry": "Consulting",
+                "Current Company": "RSM US LLP (2y)",
+                "Title": "Management Consulting Senior Associate",
+                "Location": "McLean"
+            },
+            {
+                "Names": "Chris Barton",
+                "Industry": "Law, Consulting",
+                "Current Company": "Deloitte & Touche",
+                "Title": "Director",
+                "Location": "Great Falls"
+            },
+            {
+                "Names": "Scott Levine",
+                "Industry": "Construction, Business",
+                "Current Company": "Tough Leaf (1y)",
+                "Title": "Head of Product",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Patrick Donovan",
+                "Industry": "Health, Business",
+                "Current Company": "Privia Health (9y)",
+                "Title": "Senior Director, Value Based Care Platform Strategy and Operations",
+                "Location": "Arlington"
+            },
+            {
+                "Names": "John Andrade",
+                "Industry": "Business, Data Science",
+                "Current Company": "Publishers Clearing House Media (2y)",
+                "Title": "Chief Analytics and Growth Officer",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Brett Rappaport",
+                "Industry": "Architecture",
+                "Current Company": "AAI Architects (2m)",
+                "Title": "Architect and BIM Coordinaor",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Ned Lipsett",
+                "Industry": "Entertainment",
+                "Current Company": "Fox News Media (4y)",
+                "Title": "Producer, Hannity",
+                "Location": "NYC"
+            },
+            {
+                "Names": "Andrew Hufford",
+                "Industry": "Finance, Education",
+                "Current Company": "Axcel Learning (2 y)",
+                "Title": "M&A Associate",
+                "Location": "NYC"
+            }
+        ];
+
+        // Get unique industries and locations
+        const industries = [...new Set(alumniData.flatMap(alum => 
+            alum.Industry.split(',').map(i => i.trim())
+        ))].sort();
+        
+        const locations = [...new Set(alumniData.map(alum => 
+            alum.Location
+        ))].sort();
+
+        // Populate filters
+        const industryFilters = document.getElementById('industryFilters');
+        const locationFilters = document.getElementById('locationFilters');
+        
+        let selectedIndustries = new Set();
+        let selectedLocations = new Set();
+
+        industries.forEach(industry => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" id="industry-${industry}" value="${industry}">
+                <label for="industry-${industry}">${industry}</label>
+            `;
+            div.querySelector('input').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    selectedIndustries.add(industry);
+                } else {
+                    selectedIndustries.delete(industry);
+                }
+                updateTable();
+            });
+            industryFilters.appendChild(div);
+        });
+
+        locations.forEach(location => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" id="location-${location}" value="${location}">
+                <label for="location-${location}">${location}</label>
+            `;
+            div.querySelector('input').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    selectedLocations.add(location);
+                } else {
+                    selectedLocations.delete(location);
+                }
+                updateTable();
+            });
+            locationFilters.appendChild(div);
+        });
+
+        function updateTable() {
+            const table = document.getElementById('alumniTable');
+            table.innerHTML = '';
+            
+            // Filter industries and locations based on selection
+            const displayIndustries = selectedIndustries.size > 0 
+                ? [...selectedIndustries] 
+                : industries;
+            const displayLocations = selectedLocations.size > 0 
+                ? [...selectedLocations] 
+                : locations;
+
+            // Create header row
+            const headerRow = document.createElement('tr');
+            headerRow.appendChild(document.createElement('th')); // Empty corner cell
+            
+            // Add location headers
+            displayLocations.forEach(location => {
+                const th = document.createElement('th');
+                th.textContent = location;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+            
+            // Create data rows
+            displayIndustries.forEach(industry => {
+                const row = document.createElement('tr');
+                
+                // Add industry header
+                const th = document.createElement('th');
+                th.textContent = industry;
+                row.appendChild(th);
+                
+                // Add data cells
+                displayLocations.forEach(location => {
+                    const td = document.createElement('td');
+                    const peopleInCell = alumniData.filter(alum => 
+                        alum.Industry.includes(industry) && alum.Location === location
+                    );
+                    
+                    peopleInCell.forEach(person => {
+                        const personDiv = document.createElement('div');
+                        personDiv.className = 'person';
+                        personDiv.textContent = person.Names;
+                        personDiv.onclick = (e) => {
+                            e.stopPropagation();
+                            showPersonDetails(person);
+                        };
+                        td.appendChild(personDiv);
+                    });
+                    
+                    row.appendChild(td);
+                });
+                
+                table.appendChild(row);
+            });
+        }
+
+        // Initial table display
+        updateTable();
+
+        // Modal functionality
+        const modal = document.getElementById('modal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        function showPersonDetails(person) {
+            document.body.classList.add('modal-open');
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h3>${person.Names}</h3>
+                <p><strong>Current:</strong> ${person['Current Company']} - ${person.Title}</p>
+                <p><strong>Industry:</strong> ${person.Industry}</p>
+                <p><strong>Location:</strong> ${person.Location}</p>
+                <p class="availability">✓ This person has already agreed to a 15-minute career chat</p>
+                <button class="request-btn" onclick="requestCall('${person.Names}')">
+                    CONNECT
+                </button>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+
+        closeBtn.onclick = closeModal;
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Handle call requests
+        function requestCall(alumName) {
+            const subject = encodeURIComponent(`Call Request with ${alumName}`);
+            const body = encodeURIComponent(
+                `THIS EMAIL GOES TO RYAN LEVY - SEND IT SO I CAN PUT YOU IN TOUCH WITH  ${alumName}.`
+            );
+            window.location.href = `mailto:ryanlevy830@gmail.com?subject=${subject}&body=${body}`;
+        }
+
+    </script>
+</body>
+</html>
